@@ -29,5 +29,13 @@ REDPILL_API_KEY = os.environ.get("REDPILL_API_KEY", "")
 REDPILL_BASE_URL = "https://api.redpill.ai/v1"
 OLLAMA_HOST = os.environ.get("OLLAMA_HOST", "http://localhost:11434")
 
+# Moshi model configuration
+MOSHI_STT_REPO = "kyutai/moshiko-mlx-q8"  # STT model
+MOSHI_TTS_REPO = "kyutai/moshika-mlx-q4"  # TTS model (if available, else same as STT)
+MOSHI_VOICE_REPO = "kyutai/moshi-voices"  # Voice embeddings
+MOSHI_VOICE = "af_heart"  # Default voice
+MOSHI_QUANTIZE = 8  # Quantization bits (4 or 8)
+MOSHI_SAMPLE_RATE = 24000  # Audio sample rate
+
 # Persona config file
 PERSONAS_FILE = PROJECT_DIR / "personas.yaml"
