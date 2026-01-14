@@ -28,13 +28,19 @@ local function runCommand(args)
     return task
 end
 
--- Toggle conversation (Cmd+Shift+D)
-function voiceRealtime.toggle()
-    runCommand({MAIN_SCRIPT, "toggle"})
-    notify("Voice", "Toggle")
+-- Start listening (called on key press)
+function voiceRealtime.startListening()
+    runCommand({MAIN_SCRIPT, "start"})
+    notify("Voice", "Listening...")
 end
 
--- Stop conversation (Cmd+Shift+X)
+-- Stop listening and process (called on key release)
+function voiceRealtime.stopListening()
+    runCommand({MAIN_SCRIPT, "stop_and_process"})
+    notify("Voice", "Processing...")
+end
+
+-- Stop conversation completely (Cmd+Shift+X)
 function voiceRealtime.stop()
     runCommand({MAIN_SCRIPT, "stop"})
     notify("Voice", "Stopped")
@@ -62,7 +68,14 @@ function voiceRealtime.switchCasual()
 end
 
 -- Bind hotkeys
-hs.hotkey.bind({"cmd", "shift"}, "D", voiceRealtime.toggle)
+-- Push-to-talk: fn+Space (press to start, release to stop and process)
+local pushToTalk = hs.hotkey.new({"fn"}, "space",
+    voiceRealtime.startListening,  -- pressedFn
+    voiceRealtime.stopListening    -- releasedFn
+)
+pushToTalk:enable()
+
+-- Other controls
 hs.hotkey.bind({"cmd", "shift"}, "X", voiceRealtime.stop)
 hs.hotkey.bind({"cmd", "shift"}, "1", voiceRealtime.switchAssistant)
 hs.hotkey.bind({"cmd", "shift"}, "2", voiceRealtime.switchTutor)

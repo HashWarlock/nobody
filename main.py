@@ -55,27 +55,45 @@ def get_or_create_conversation() -> Conversation:
     return conversation
 
 
-def handle_toggle():
-    """Handle toggle command."""
+def handle_start():
+    """Handle start command - begin listening (push-to-talk press)."""
     conv = get_or_create_conversation()
-    new_state = conv.toggle()
-    print(f"State: {new_state.name}", file=sys.stderr)
+    conv.state = State.LISTENING
+    conv.current_transcript = ""
+    print("State: LISTENING", file=sys.stderr)
+    print("Listening...", file=sys.stderr)
+    # TODO: Start STT with Kyutai
 
-    if new_state == State.LISTENING:
-        print("Listening...", file=sys.stderr)
-        # TODO: Start STT with Kyutai
-    elif new_state == State.THINKING:
-        print("Thinking...", file=sys.stderr)
-        # Process the transcript
-        conv.add_user_message(conv.current_transcript)
-        response = conv.get_response()
-        conv.add_assistant_message(response)
-        print(f"Response: {response}", file=sys.stderr)
-        # TODO: Start TTS with Kyutai
+
+def handle_stop_and_process():
+    """Handle stop_and_process command - stop listening and get response (push-to-talk release)."""
+    conv = get_or_create_conversation()
+
+    if conv.state != State.LISTENING:
+        print("Not listening, nothing to process", file=sys.stderr)
+        return
+
+    conv.state = State.THINKING
+    print("State: THINKING", file=sys.stderr)
+    print("Processing...", file=sys.stderr)
+
+    # TODO: Get transcript from STT
+    # For now, use placeholder if no transcript
+    if not conv.current_transcript:
+        conv.current_transcript = "[No audio captured - STT not yet integrated]"
+
+    # Process the transcript
+    conv.add_user_message(conv.current_transcript)
+    response = conv.get_response()
+    conv.add_assistant_message(response)
+    print(f"Response: {response}", file=sys.stderr)
+
+    # TODO: Start TTS with Kyutai
+    conv.state = State.IDLE
 
 
 def handle_stop():
-    """Handle stop command."""
+    """Handle stop command - cancel and return to idle."""
     conv = get_or_create_conversation()
     conv.stop()
     print("Stopped", file=sys.stderr)
@@ -95,7 +113,7 @@ def handle_persona(persona_id: str):
 def main():
     """Main entry point."""
     parser = argparse.ArgumentParser(description="Voice Realtime Conversation")
-    parser.add_argument("command", choices=["toggle", "stop", "persona"],
+    parser.add_argument("command", choices=["start", "stop_and_process", "stop", "persona"],
                         help="Command to execute")
     parser.add_argument("persona_id", nargs="?", help="Persona ID for persona command")
 
@@ -109,8 +127,10 @@ def main():
     write_pid()
 
     try:
-        if args.command == "toggle":
-            handle_toggle()
+        if args.command == "start":
+            handle_start()
+        elif args.command == "stop_and_process":
+            handle_stop_and_process()
         elif args.command == "stop":
             handle_stop()
         elif args.command == "persona":

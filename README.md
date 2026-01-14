@@ -26,8 +26,8 @@ Real-time conversational AI for macOS with multiple personas and hybrid LLM rout
 
 | Hotkey | Action |
 |--------|--------|
-| `Cmd+Shift+D` | Toggle conversation |
-| `Cmd+Shift+X` | Stop |
+| `fn+Space` | Push-to-talk (hold to speak, release to process) |
+| `Cmd+Shift+X` | Stop/Cancel |
 | `Cmd+Shift+1` | Switch to Assistant |
 | `Cmd+Shift+2` | Switch to Tutor |
 | `Cmd+Shift+3` | Switch to Creative |
