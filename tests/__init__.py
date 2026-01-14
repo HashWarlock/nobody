@@ -1,1 +1,1 @@
-"""Tests for voice-realtime."""
+"""Test package for voice-realtime."""
