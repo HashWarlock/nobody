@@ -4,10 +4,22 @@ Real-time conversational AI for macOS with multiple personas and hybrid LLM rout
 
 ## Features
 
+- **Push-to-Talk**: Hold Cmd+Shift+T to speak, release to get AI response
 - **Multiple Personas**: Switch between Assistant, Tutor, Creative, and Casual modes
 - **Hybrid LLM**: Local Ollama for speed, RedPill cloud for complex tasks
-- **Voice Pipeline**: Kyutai STT/TTS with <1s latency (coming soon)
-- **Continuous Conversation**: Auto-listen after AI responds
+- **Voice Pipeline**: Moshi MLX for low-latency STT + TTS on Apple Silicon
+- **Continuous Conversation**: Maintains context across turns
+
+## Voice Pipeline
+
+Uses [moshi_mlx](https://github.com/kyutai-labs/moshi) for speech processing:
+
+- **STT**: Moshi text token extraction from audio
+- **TTS**: Moshi TTSModel for natural speech synthesis
+- **Codec**: Mimi neural audio codec (80ms latency)
+- **Optimized**: Quantized models (8-bit) for Apple Silicon
+
+First run downloads models (~2GB). Models are cached for subsequent runs.
 
 ## Requirements
 
