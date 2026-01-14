@@ -22,7 +22,7 @@ CHANNELS = 1
 # Conversation settings
 SILENCE_THRESHOLD_SEC = 1.5
 IDLE_TIMEOUT_SEC = 10.0
-LLM_TIMEOUT_SEC = 30.0
+LLM_TIMEOUT_SEC = 120.0  # Increased for slower cloud models
 
 # API configuration
 REDPILL_API_KEY = os.environ.get("REDPILL_API_KEY", "")
