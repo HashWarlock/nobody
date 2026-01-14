@@ -1,5 +1,5 @@
-# Voice pipeline
-moshi[client]>=0.2.3
+# Voice pipeline (Kyutai)
+moshi>=0.2.3
 
 # LLM clients
 ollama>=0.4.0
