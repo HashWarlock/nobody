@@ -5,8 +5,8 @@ personas:
     name: "Assistant"
     hotkey: "cmd+shift+1"
     llm:
-      provider: "ollama"
-      model: "llama3.1:8b"
+      provider: "redpill"
+      model: "phala/uncensored-24b"
     voice: "default"
     system_prompt: |
       You are a concise, helpful assistant. Give brief, actionable answers.

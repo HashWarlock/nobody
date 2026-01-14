@@ -37,7 +37,7 @@ if [[ "$(uname -m)" != "arm64" ]]; then
 fi
 
 # Check Homebrew
-echo -e "${BLUE}[1/6] Checking Homebrew...${NC}"
+echo -e "${BLUE}[1/8] Checking Homebrew...${NC}"
 if ! command -v brew &> /dev/null; then
     echo -e "${YELLOW}Installing Homebrew...${NC}"
     /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
@@ -47,13 +47,13 @@ echo -e "${GREEN}Homebrew ready${NC}"
 
 # Install dependencies
 echo
-echo -e "${BLUE}[2/6] Installing system dependencies...${NC}"
+echo -e "${BLUE}[2/8] Installing system dependencies...${NC}"
 brew install portaudio ffmpeg 2>/dev/null || true
 echo -e "${GREEN}System dependencies installed${NC}"
 
 # Check Ollama
 echo
-echo -e "${BLUE}[3/6] Checking Ollama...${NC}"
+echo -e "${BLUE}[3/8] Checking Ollama...${NC}"
 if ! command -v ollama &> /dev/null; then
     echo -e "${YELLOW}Installing Ollama...${NC}"
     brew install ollama
@@ -63,7 +63,7 @@ echo -e "${YELLOW}Make sure to run: ollama serve${NC}"
 
 # Python environment
 echo
-echo -e "${BLUE}[4/6] Setting up Python environment...${NC}"
+echo -e "${BLUE}[4/8] Setting up Python environment...${NC}"
 if ! command -v /opt/homebrew/bin/python3.12 &> /dev/null; then
     brew install python@3.12
 fi
@@ -80,7 +80,7 @@ echo -e "${GREEN}Python environment ready${NC}"
 
 # Hammerspoon
 echo
-echo -e "${BLUE}[5/6] Configuring Hammerspoon...${NC}"
+echo -e "${BLUE}[5/8] Configuring Hammerspoon...${NC}"
 if [[ ! -d "/Applications/Hammerspoon.app" ]]; then
     brew install --cask hammerspoon
 fi
@@ -96,10 +96,40 @@ echo -e "${GREEN}Hammerspoon configured${NC}"
 
 # Temp directory
 echo
-echo -e "${BLUE}[6/6] Creating directories...${NC}"
+echo -e "${BLUE}[6/8] Creating directories...${NC}"
 mkdir -p "$TEMP_DIR"
 mkdir -p "$SCRIPT_DIR/voices"
 echo -e "${GREEN}Directories created${NC}"
+
+# Download Moshi models
+echo
+echo -e "${BLUE}[7/8] Downloading Moshi STT model (~8GB)...${NC}"
+echo -e "${YELLOW}This may take a while on first run${NC}"
+if command -v hf &> /dev/null; then
+    hf download kyutai/moshiko-mlx-q8 --quiet || {
+        echo -e "${YELLOW}Download interrupted. Run 'hf download kyutai/moshiko-mlx-q8' to resume${NC}"
+    }
+    echo -e "${GREEN}STT model ready${NC}"
+else
+    echo -e "${YELLOW}hf CLI not found. Install with: pip install huggingface_hub[cli]${NC}"
+    echo -e "${YELLOW}Then run: hf download kyutai/moshiko-mlx-q8${NC}"
+fi
+
+echo
+echo -e "${BLUE}[8/8] Downloading Moshi TTS model (~385MB)...${NC}"
+if command -v hf &> /dev/null; then
+    hf download kyutai/tts-1.6b-en_fr --quiet || {
+        echo -e "${YELLOW}Download interrupted. Run 'hf download kyutai/tts-1.6b-en_fr' to resume${NC}"
+    }
+    hf download kyutai/tts-voices --quiet || {
+        echo -e "${YELLOW}Download interrupted. Run 'hf download kyutai/tts-voices' to resume${NC}"
+    }
+    echo -e "${GREEN}TTS models ready${NC}"
+else
+    echo -e "${YELLOW}Run manually after installing hf CLI:${NC}"
+    echo -e "${YELLOW}  hf download kyutai/tts-1.6b-en_fr${NC}"
+    echo -e "${YELLOW}  hf download kyutai/tts-voices${NC}"
+fi
 
 # Check RedPill API key
 echo

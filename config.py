@@ -3,6 +3,22 @@
 import os
 from pathlib import Path
 
+# Load .env file if it exists
+def _load_env():
+    env_file = Path(__file__).parent / ".env"
+    if env_file.exists():
+        with open(env_file) as f:
+            for line in f:
+                line = line.strip()
+                if line and not line.startswith("#") and "=" in line:
+                    key, value = line.split("=", 1)
+                    key = key.strip()
+                    value = value.strip().strip('"').strip("'")
+                    if key and key not in os.environ:
+                        os.environ[key] = value
+
+_load_env()
+
 # Directories
 PROJECT_DIR = Path(__file__).parent
 VOICES_DIR = PROJECT_DIR / "voices"
@@ -30,10 +46,7 @@ REDPILL_BASE_URL = "https://api.redpill.ai/v1"
 OLLAMA_HOST = os.environ.get("OLLAMA_HOST", "http://localhost:11434")
 
 # Moshi model configuration
-MOSHI_STT_REPO = "kyutai/moshiko-mlx-q8"  # STT model
-MOSHI_TTS_REPO = "kyutai/moshika-mlx-q4"  # TTS model (if available, else same as STT)
-MOSHI_VOICE_REPO = "kyutai/moshi-voices"  # Voice embeddings
-MOSHI_VOICE = "af_heart"  # Default voice
+MOSHI_REPO = "kyutai/moshiko-mlx-q8"  # Quantized Moshi model for STT/TTS
 MOSHI_QUANTIZE = 8  # Quantization bits (4 or 8)
 MOSHI_SAMPLE_RATE = 24000  # Audio sample rate
 

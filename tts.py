@@ -24,7 +24,7 @@ class MoshiSynthesizer:
         self,
         hf_repo: str | None = None,
         voice_repo: str | None = None,
-        voice: str = "af_heart",
+        voice: str = "alba-mackenna/casual.wav",
         quantize: int | None = 8,
     ):
         """Initialize synthesizer.
@@ -87,6 +87,17 @@ class MoshiSynthesizer:
         )
         self.mimi = self.tts_model.mimi
 
+        # Handle CFG distillation (model was trained with it)
+        self.cfg_coef_conditioning = None
+        if self.tts_model.valid_cfg_conditionings:
+            self.cfg_coef_conditioning = self.tts_model.cfg_coef
+            self.tts_model.cfg_coef = 1.0
+            self.cfg_is_no_text = False
+            self.cfg_is_no_prefix = False
+        else:
+            self.cfg_is_no_text = True
+            self.cfg_is_no_prefix = True
+
     def synthesize(self, text: str) -> np.ndarray:
         """Synthesize text to audio.
 
@@ -109,7 +120,7 @@ class MoshiSynthesizer:
         else:
             voices = []
 
-        attributes = self.tts_model.make_condition_attributes(voices, None)
+        attributes = self.tts_model.make_condition_attributes(voices, self.cfg_coef_conditioning)
 
         # Get prefix for single-speaker models
         prefixes = None
@@ -122,8 +133,8 @@ class MoshiSynthesizer:
             [entries],
             [attributes],
             prefixes=prefixes,
-            cfg_is_no_prefix=True,
-            cfg_is_no_text=True,
+            cfg_is_no_prefix=self.cfg_is_no_prefix,
+            cfg_is_no_text=self.cfg_is_no_text,
         )
 
         # Decode audio

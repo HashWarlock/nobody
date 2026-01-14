@@ -1,9 +1,8 @@
 """Speech-to-text module using moshi_mlx.
 
-Based on moshi_mlx/run_inference.py - extracts text tokens from Moshi.
+Based on moshi_mlx/local.py - uses the quantized Moshi model for STT.
 """
 
-import json
 import numpy as np
 
 from huggingface_hub import hf_hub_download
@@ -20,7 +19,7 @@ class MoshiTranscriber:
 
     DEFAULT_REPO = "kyutai/moshiko-mlx-q8"
     SAMPLE_RATE = 24000
-    FRAME_SIZE = 1920  # Samples per frame at 24kHz
+    FRAME_SIZE = 1920  # Samples per frame at 24kHz (80ms)
 
     def __init__(self, hf_repo: str | None = None, quantize: int = 8):
         """Initialize transcriber.
@@ -35,48 +34,45 @@ class MoshiTranscriber:
 
     def _load_model(self):
         """Load Moshi model and tokenizers."""
-        # Load config
-        config_path = hf_hub_download(self.hf_repo, "config.json")
-        with open(config_path, "r") as f:
-            raw_config = json.load(f)
+        print(f"Loading Moshi model from {self.hf_repo}...")
 
-        self.stt_config = raw_config.get("stt_config", None)
+        # Download model weights
+        if self.quantize == 8:
+            model_file = hf_hub_download(self.hf_repo, "model.q8.safetensors")
+        elif self.quantize == 4:
+            model_file = hf_hub_download(self.hf_repo, "model.q4.safetensors")
+        else:
+            model_file = hf_hub_download(self.hf_repo, "model.safetensors")
 
-        # Load Mimi audio tokenizer
-        mimi_name = raw_config["mimi_name"]
-        mimi_path = hf_hub_download(self.hf_repo, mimi_name)
-
-        lm_config = models.LmConfig.from_config_dict(raw_config)
-        self.other_codebooks = lm_config.other_codebooks
-        mimi_codebooks = max(lm_config.generated_codebooks, self.other_codebooks)
-        self.audio_tokenizer = rustymimi.Tokenizer(mimi_path, num_codebooks=mimi_codebooks)
+        # Download tokenizers
+        tokenizer_file = hf_hub_download(self.hf_repo, "tokenizer_spm_32k_3.model")
+        mimi_file = hf_hub_download(self.hf_repo, "tokenizer-e351c8d8-checkpoint125.safetensors")
 
         # Load text tokenizer
-        tokenizer_path = hf_hub_download(self.hf_repo, raw_config["tokenizer_name"])
-        self.text_tokenizer = sentencepiece.SentencePieceProcessor(tokenizer_path)
+        print("Loading text tokenizer...")
+        self.text_tokenizer = sentencepiece.SentencePieceProcessor(tokenizer_file)
 
-        # Load LM model
-        moshi_name = raw_config.get("moshi_name", "model.safetensors")
-        moshi_path = hf_hub_download(self.hf_repo, moshi_name)
+        # Load Mimi audio tokenizer (non-streaming for batch processing)
+        print("Loading Mimi audio codec...")
+        lm_config = models.config_v0_1()
+        self.audio_tokenizer = rustymimi.Tokenizer(mimi_file, num_codebooks=lm_config.audio_codebooks)
 
+        # Build and load LM
+        print("Loading language model...")
+        mx.random.seed(299792458)
         self.model = models.Lm(lm_config)
         self.model.set_dtype(mx.bfloat16)
 
-        if self.quantize == 4:
-            nn.quantize(self.model, bits=4, group_size=32)
-        elif self.quantize == 8:
-            nn.quantize(self.model, bits=8, group_size=64)
+        if self.quantize is not None:
+            group_size = 32 if self.quantize == 4 else 64
+            nn.quantize(self.model, bits=self.quantize, group_size=group_size)
 
-        self.model.load_weights(moshi_path, strict=True)
-
-        # Condition tensor
-        if self.model.condition_provider is not None:
-            self.condition_tensor = self.model.condition_provider.condition_tensor("description", "very_good")
-        else:
-            self.condition_tensor = None
+        self.model.load_weights(model_file, strict=True)
 
         # Warmup
-        self.model.warmup(self.condition_tensor)
+        print("Warming up model...")
+        self.model.warmup()
+        print("STT model ready!")
 
     def transcribe(self, audio: np.ndarray) -> str:
         """Transcribe audio to text.
@@ -90,17 +86,12 @@ class MoshiTranscriber:
         if len(audio) == 0:
             return ""
 
+        # Ensure audio is float32
+        audio = audio.astype(np.float32)
+
         # Ensure audio is right shape [1, samples]
         if audio.ndim == 1:
             audio = audio.reshape(1, -1)
-
-        # Apply STT config padding if available
-        if self.stt_config is not None:
-            pad_right = self.stt_config.get("audio_delay_seconds", 0.0)
-            pad_left = self.stt_config.get("audio_silence_prefix_seconds", 0.0)
-            pad_left = int(pad_left * self.SAMPLE_RATE)
-            pad_right = int((pad_right + 1.0) * self.SAMPLE_RATE)
-            audio = np.pad(audio, pad_width=[(0, 0), (pad_left, pad_right)], mode="constant")
 
         # Calculate steps
         steps = audio.shape[-1] // self.FRAME_SIZE
@@ -111,10 +102,9 @@ class MoshiTranscriber:
         # Create generator
         gen = models.LmGen(
             model=self.model,
-            max_steps=steps,
-            text_sampler=utils.Sampler(top_k=25, temp=0.8),
-            audio_sampler=utils.Sampler(top_k=250, temp=0.8),
-            cfg_coef=1.0,
+            max_steps=steps + 5,
+            text_sampler=utils.Sampler(),
+            audio_sampler=utils.Sampler(),
             check=False,
         )
 
@@ -123,18 +113,18 @@ class MoshiTranscriber:
         for idx in range(steps):
             frame = audio[:, idx * self.FRAME_SIZE:(idx + 1) * self.FRAME_SIZE]
 
-            # Encode audio frame
+            # Encode audio frame to tokens - expects (batch, channels, samples)
             audio_tokens = self.audio_tokenizer.encode_step(frame[None, 0:1])
-            audio_tokens = mx.array(audio_tokens).transpose(0, 2, 1)[:, :, :self.other_codebooks]
+            audio_tokens = mx.array(audio_tokens).transpose(0, 2, 1)[:, :, :8]
 
-            # Get text token
-            text_token = gen.step(audio_tokens[0], self.condition_tensor)
+            # Get text token from model
+            text_token = gen.step(audio_tokens[0])
             text_token = text_token[0].item()
 
             # Decode text token (skip padding tokens 0 and 3)
             if text_token not in (0, 3):
                 text = self.text_tokenizer.id_to_piece(text_token)
-                text = text.replace("\u2581", " ")
+                text = text.replace("▁", " ")
                 transcript_parts.append(text)
 
         return "".join(transcript_parts).strip()
