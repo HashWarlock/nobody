@@ -123,7 +123,7 @@ echo "5. Set REDPILL_API_KEY if using cloud personas"
 echo "6. Open Hammerspoon"
 echo
 echo -e "${BLUE}Hotkeys:${NC}"
-echo "  fn+Space     →  Push-to-talk (hold to speak)"
+echo "  Cmd+Shift+T  →  Push-to-talk (hold to speak)"
 echo "  Cmd+Shift+X  →  Stop/Cancel"
 echo "  Cmd+Shift+1  →  Assistant (local)"
 echo "  Cmd+Shift+2  →  Tutor (cloud)"
