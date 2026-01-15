@@ -1,0 +1,14 @@
+# Voice pipeline (Moshi MLX for Apple Silicon)
+moshi_mlx>=0.3.0
+huggingface_hub[cli]>=0.25.0
+
+# LLM clients
+ollama>=0.4.0
+httpx>=0.27.0
+
+# Configuration
+pyyaml>=6.0
+
+# Audio
+sounddevice>=0.5.0
+numpy>=1.26.0
