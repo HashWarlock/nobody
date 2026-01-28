@@ -50,6 +50,37 @@ local function runCommand(args)
     task:start()
 end
 
+-- Run Python command and type output at cursor
+local function runCommandAndType(args)
+    local task = hs.task.new(PYTHON, function(exitCode, stdOut, stdErr)
+        if exitCode ~= 0 then
+            hs.notify.new({title = "Voice Error", informativeText = stdErr or "Command failed"}):send()
+            return
+        end
+        if stdOut and stdOut ~= "" then
+            -- Trim whitespace and type at cursor
+            local text = stdOut:gsub("^%s+", ""):gsub("%s+$", "")
+            if text ~= "" then
+                hs.eventtap.keyStrokes(text)
+            end
+        end
+    end, args)
+    task:start()
+end
+
+-- Push-to-dictate: Cmd+Shift+D (hold to speak, release to type at cursor)
+local pushToDictate = hs.hotkey.new({"cmd", "shift"}, "D",
+    function()
+        hs.alert.show("📝 Dictating...", 1)
+        runCommand({MAIN_SCRIPT, "start"})
+    end,
+    function()
+        hs.alert.show("⌨️ Typing...", 1)
+        runCommandAndType({MAIN_SCRIPT, "dictate"})
+    end
+)
+pushToDictate:enable()
+
 -- Push-to-talk: Cmd+Shift+T (hold to speak, release to process)
 local pushToTalk = hs.hotkey.new({"cmd", "shift"}, "T",
     function()

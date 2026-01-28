@@ -66,7 +66,8 @@ echo "REDPILL_API_KEY=your-key-here" > .env
 
 | Hotkey | Action |
 |--------|--------|
-| `Cmd+Shift+T` | Push-to-talk (hold to speak, release to process) |
+| `Cmd+Shift+T` | Push-to-talk (hold to speak, release to get AI response) |
+| `Cmd+Shift+D` | Push-to-dictate (hold to speak, release to type at cursor) |
 | `Cmd+Shift+X` | Stop/Cancel |
 | `Cmd+Shift+1` | Switch to Assistant persona |
 | `Cmd+Shift+2` | Switch to Tutor persona |

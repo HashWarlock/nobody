@@ -170,10 +170,53 @@ def handle_persona(persona_id: str):
         sys.exit(1)
 
 
+def handle_dictate():
+    """Handle dictate command - transcribe and output text to stdout for typing."""
+    # Signal recorder to stop by creating stop file
+    pid = read_pid(RECORDING_PID_FILE)
+    if pid:
+        RECORDING_STOP_FILE.touch()
+        for _ in range(50):  # 5 seconds max
+            time.sleep(0.1)
+            if not RECORDING_PID_FILE.exists():
+                break
+
+    # Check for audio file
+    if not AUDIO_FILE.exists():
+        print("No audio recorded", file=sys.stderr)
+        return
+
+    # Load audio
+    audio = np.load(AUDIO_FILE)
+    remove_file(AUDIO_FILE)
+
+    duration = len(audio) / 24000
+    print(f"Captured {duration:.1f}s of audio", file=sys.stderr)
+
+    if len(audio) < 4800:  # Less than 0.2 seconds
+        print("Audio too short", file=sys.stderr)
+        return
+
+    # Load transcriber
+    print("Transcribing...", file=sys.stderr)
+    from stt import WhisperTranscriber
+    transcriber = WhisperTranscriber(model="distil-medium.en")
+
+    # Transcribe
+    transcript = transcriber.transcribe(audio)
+
+    if not transcript.strip():
+        print("No speech detected", file=sys.stderr)
+        return
+
+    # Output transcript to stdout (for Hammerspoon to capture and type)
+    print(transcript)
+
+
 def main():
     """Main entry point."""
     parser = argparse.ArgumentParser(description="Voice Realtime Conversation")
-    parser.add_argument("command", choices=["start", "stop_and_process", "stop", "persona"],
+    parser.add_argument("command", choices=["start", "stop_and_process", "stop", "persona", "dictate"],
                         help="Command to execute")
     parser.add_argument("persona_id", nargs="?", help="Persona ID for persona command")
 
@@ -185,6 +228,8 @@ def main():
         handle_stop_and_process()
     elif args.command == "stop":
         handle_stop()
+    elif args.command == "dictate":
+        handle_dictate()
     elif args.command == "persona":
         if not args.persona_id:
             print("Error: persona command requires persona_id", file=sys.stderr)

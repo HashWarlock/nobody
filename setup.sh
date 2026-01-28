@@ -86,13 +86,17 @@ if [[ ! -d "/Applications/Hammerspoon.app" ]]; then
 fi
 
 mkdir -p "$HAMMERSPOON_DIR"
-if [[ -f "$HAMMERSPOON_DIR/init.lua" ]]; then
+# Backup existing init.lua if it's not already our config
+if [[ -f "$HAMMERSPOON_DIR/init.lua" && ! -L "$HAMMERSPOON_DIR/init.lua" ]]; then
     if ! grep -q "Voice Realtime" "$HAMMERSPOON_DIR/init.lua" 2>/dev/null; then
         cp "$HAMMERSPOON_DIR/init.lua" "$HAMMERSPOON_DIR/init.lua.backup"
+        echo -e "${YELLOW}Backed up existing init.lua${NC}"
     fi
 fi
-cp "$SCRIPT_DIR/hotkeys.lua" "$HAMMERSPOON_DIR/init.lua"
-echo -e "${GREEN}Hammerspoon configured${NC}"
+# Create symlink so changes to hotkeys.lua auto-apply
+rm -f "$HAMMERSPOON_DIR/init.lua"
+ln -s "$SCRIPT_DIR/hotkeys.lua" "$HAMMERSPOON_DIR/init.lua"
+echo -e "${GREEN}Hammerspoon configured (symlinked to hotkeys.lua)${NC}"
 
 # Temp directory and symlink
 echo
