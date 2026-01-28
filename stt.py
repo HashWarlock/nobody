@@ -32,12 +32,17 @@ class WhisperTranscriber:
     def _load_model(self):
         """Lazy load the model on first use."""
         if self._model is None:
-            print(f"Loading Whisper model: {self.model_name}...")
-            self._model = LightningWhisperMLX(
-                model=self.model_name,
-                batch_size=self.batch_size
-            )
-            print("Whisper model ready!")
+            import sys
+            import io
+            import contextlib
+            print(f"Loading Whisper model: {self.model_name}...", file=sys.stderr)
+            # Suppress stdout from LightningWhisperMLX (it prints loading messages)
+            with contextlib.redirect_stdout(io.StringIO()):
+                self._model = LightningWhisperMLX(
+                    model=self.model_name,
+                    batch_size=self.batch_size
+                )
+            print("Whisper model ready!", file=sys.stderr)
 
     def transcribe(self, audio: np.ndarray, sample_rate: int = 24000) -> str:
         """Transcribe audio to text.

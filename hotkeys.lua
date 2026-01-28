@@ -61,8 +61,15 @@ local function runCommandAndType(args)
             -- Trim whitespace and type at cursor
             local text = stdOut:gsub("^%s+", ""):gsub("%s+$", "")
             if text ~= "" then
-                hs.eventtap.keyStrokes(text)
+                -- Small delay to ensure focus is ready, then type
+                hs.timer.doAfter(0.1, function()
+                    hs.eventtap.keyStrokes(text)
+                end)
+            else
+                hs.alert.show("No text to type", 1)
             end
+        else
+            hs.alert.show("No transcription", 1)
         end
     end, args)
     task:start()
