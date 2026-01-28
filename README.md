@@ -5,6 +5,7 @@ Real-time conversational AI for macOS with push-to-talk interface and multiple p
 ## Features
 
 - **Push-to-Talk**: Hold `Cmd+Shift+T` to speak, release to get AI response
+- **Push-to-Dictate**: Hold `Cmd+Shift+D` to speak, release to type at cursor
 - **Multiple Personas**: Switch between Assistant, Tutor, Creative, and Casual modes
 - **Hybrid LLM**: RedPill cloud API for powerful models (Claude, GPT-4, etc.)
 - **Fast STT**: Lightning Whisper MLX - optimized for Apple Silicon
@@ -31,7 +32,7 @@ cd nobody
 The setup script will:
 - Create a Python virtual environment at `~/voice-env`
 - Install all dependencies
-- Configure Hammerspoon hotkeys
+- Symlink Hammerspoon config (auto-updates when you pull changes)
 - Download required ML models (~1GB)
 - Create a symlink at `~/voice-realtime`
 
@@ -51,10 +52,12 @@ echo "REDPILL_API_KEY=your-key-here" > .env
 
 ### 3. Grant Permissions
 
-- Open **System Settings > Privacy & Security > Accessibility**
-- Add Hammerspoon and grant access
-- Open **System Settings > Privacy & Security > Microphone**
-- Grant access to Terminal (or your terminal app)
+- **System Settings > Privacy & Security > Accessibility**
+  - Add Hammerspoon and grant access
+- **System Settings > Privacy & Security > Microphone**
+  - Grant access to Terminal (or your terminal app)
+- **System Settings > Privacy & Security > Automation** (for dictation)
+  - Allow Hammerspoon to control "System Events"
 
 ### 4. Start Using
 
@@ -154,6 +157,11 @@ Try a larger Whisper model (e.g., `small` or `distil-medium.en`).
 
 ### Hammerspoon not responding
 Reload config with `Cmd+Shift+R` or restart Hammerspoon.
+
+### Dictation not typing
+1. Check **System Settings > Privacy & Security > Automation** - Hammerspoon needs permission to control "System Events"
+2. Make sure a text field is focused when you release the hotkey
+3. Try `Cmd+V` manually after dictating - if text pastes, it's a permission issue
 
 ## License
 
