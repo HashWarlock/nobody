@@ -94,11 +94,26 @@ fi
 cp "$SCRIPT_DIR/hotkeys.lua" "$HAMMERSPOON_DIR/init.lua"
 echo -e "${GREEN}Hammerspoon configured${NC}"
 
-# Temp directory
+# Temp directory and symlink
 echo
 echo -e "${BLUE}[6/8] Creating directories...${NC}"
 mkdir -p "$TEMP_DIR"
 mkdir -p "$SCRIPT_DIR/voices"
+
+# Create symlink at ~/voice-realtime for portable path detection
+VOICE_REALTIME_LINK="$HOME/voice-realtime"
+if [[ ! -e "$VOICE_REALTIME_LINK" ]]; then
+    ln -s "$SCRIPT_DIR" "$VOICE_REALTIME_LINK"
+    echo -e "${GREEN}Created symlink: ~/voice-realtime -> $SCRIPT_DIR${NC}"
+elif [[ -L "$VOICE_REALTIME_LINK" ]]; then
+    # Update existing symlink if it points elsewhere
+    CURRENT_TARGET=$(readlink "$VOICE_REALTIME_LINK")
+    if [[ "$CURRENT_TARGET" != "$SCRIPT_DIR" ]]; then
+        rm "$VOICE_REALTIME_LINK"
+        ln -s "$SCRIPT_DIR" "$VOICE_REALTIME_LINK"
+        echo -e "${YELLOW}Updated symlink: ~/voice-realtime -> $SCRIPT_DIR${NC}"
+    fi
+fi
 echo -e "${GREEN}Directories created${NC}"
 
 # Download Moshi models

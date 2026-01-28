@@ -106,10 +106,10 @@ def handle_stop_and_process():
 
     # Load models (cached after first load)
     print("Loading models...", file=sys.stderr)
-    from stt import MoshiTranscriber
+    from stt import WhisperTranscriber
     from tts import MoshiSynthesizer
 
-    transcriber = MoshiTranscriber(hf_repo=config.MOSHI_REPO, quantize=config.MOSHI_QUANTIZE)
+    transcriber = WhisperTranscriber(model="distil-medium.en")  # Fast & accurate for English
     synthesizer = MoshiSynthesizer()
 
     # Transcribe

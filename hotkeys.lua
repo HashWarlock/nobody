@@ -1,8 +1,44 @@
 -- Voice Realtime - Hammerspoon Hotkey Configuration
 -- Push-to-talk conversational AI with multiple personas
 
-local PYTHON = "/Users/hashwarlock/voice-env/bin/python"
-local MAIN_SCRIPT = "/Users/hashwarlock/voice-realtime/main.py"
+-- Auto-detect paths: look for voice-env in common locations
+local HOME = os.getenv("HOME")
+local function findPython()
+    local candidates = {
+        HOME .. "/voice-env/bin/python",           -- Default install location
+        HOME .. "/.local/share/voice-realtime/venv/bin/python",
+        "/opt/homebrew/bin/python3",               -- Homebrew fallback
+        "/usr/local/bin/python3",                  -- Intel Mac fallback
+    }
+    for _, path in ipairs(candidates) do
+        local f = io.open(path, "r")
+        if f then
+            f:close()
+            return path
+        end
+    end
+    return candidates[1]  -- Default even if not found (will error clearly)
+end
+
+local function findMainScript()
+    -- Look for main.py relative to this Lua file's config, or common locations
+    local candidates = {
+        HOME .. "/voice-realtime/main.py",                    -- Symlink/clone location
+        HOME .. "/Projects/AI/nobody/main.py",                -- Dev location
+        HOME .. "/.local/share/voice-realtime/main.py",       -- XDG location
+    }
+    for _, path in ipairs(candidates) do
+        local f = io.open(path, "r")
+        if f then
+            f:close()
+            return path
+        end
+    end
+    return candidates[1]
+end
+
+local PYTHON = findPython()
+local MAIN_SCRIPT = findMainScript()
 
 -- Run Python command
 local function runCommand(args)

@@ -10,4 +10,9 @@ pyvenv.cfg
 include/
 *.pyc
 __pycache__/
+
+# Environment and secrets
 .env
+
+# Downloaded ML models (large files)
+mlx_models/
