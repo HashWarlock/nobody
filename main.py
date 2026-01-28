@@ -213,12 +213,32 @@ def handle_dictate():
     print(transcript)
 
 
+def handle_speak(text: str):
+    """Handle speak command - synthesize and play text."""
+    if not text.strip():
+        print("No text to speak", file=sys.stderr)
+        return
+
+    print(f"Speaking: {text[:50]}{'...' if len(text) > 50 else ''}", file=sys.stderr)
+
+    # Load TTS
+    from tts import MoshiSynthesizer
+    synthesizer = MoshiSynthesizer()
+
+    # Synthesize and play
+    speech = synthesizer.synthesize(text)
+    sd.play(speech, samplerate=24000)
+    sd.wait()
+
+    print("Done", file=sys.stderr)
+
+
 def main():
     """Main entry point."""
     parser = argparse.ArgumentParser(description="Voice Realtime Conversation")
-    parser.add_argument("command", choices=["start", "stop_and_process", "stop", "persona", "dictate"],
+    parser.add_argument("command", choices=["start", "stop_and_process", "stop", "persona", "dictate", "speak"],
                         help="Command to execute")
-    parser.add_argument("persona_id", nargs="?", help="Persona ID for persona command")
+    parser.add_argument("text", nargs="?", help="Text for speak command, or persona ID for persona command")
 
     args = parser.parse_args()
 
@@ -230,11 +250,17 @@ def main():
         handle_stop()
     elif args.command == "dictate":
         handle_dictate()
+    elif args.command == "speak":
+        # Read from argument or stdin
+        text = args.text
+        if not text:
+            text = sys.stdin.read()
+        handle_speak(text)
     elif args.command == "persona":
-        if not args.persona_id:
+        if not args.text:
             print("Error: persona command requires persona_id", file=sys.stderr)
             sys.exit(1)
-        handle_persona(args.persona_id)
+        handle_persona(args.text)
 
 
 if __name__ == "__main__":

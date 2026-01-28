@@ -6,6 +6,7 @@ Real-time conversational AI for macOS with push-to-talk interface and multiple p
 
 - **Push-to-Talk**: Hold `Cmd+Shift+T` to speak, release to get AI response
 - **Push-to-Dictate**: Hold `Cmd+Shift+D` to speak, release to type at cursor
+- **Read Selection**: Select text, press `Cmd+Shift+S` to hear it read aloud
 - **Multiple Personas**: Switch between Assistant, Tutor, Creative, and Casual modes
 - **Hybrid LLM**: RedPill cloud API for powerful models (Claude, GPT-4, etc.)
 - **Fast STT**: Lightning Whisper MLX - optimized for Apple Silicon
@@ -71,6 +72,7 @@ echo "REDPILL_API_KEY=your-key-here" > .env
 |--------|--------|
 | `Cmd+Shift+T` | Push-to-talk (hold to speak, release to get AI response) |
 | `Cmd+Shift+D` | Push-to-dictate (hold to speak, release to type at cursor) |
+| `Cmd+Shift+S` | Read selection (highlight text, press to hear it spoken) |
 | `Cmd+Shift+X` | Stop/Cancel |
 | `Cmd+Shift+1` | Switch to Assistant persona |
 | `Cmd+Shift+2` | Switch to Tutor persona |

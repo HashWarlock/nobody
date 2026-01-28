@@ -108,6 +108,22 @@ hs.hotkey.bind({"cmd", "shift"}, "X", function()
     runCommand({MAIN_SCRIPT, "stop"})
 end)
 
+-- Read selection aloud: Cmd+Shift+S
+hs.hotkey.bind({"cmd", "shift"}, "S", function()
+    -- Copy selected text
+    hs.eventtap.keyStroke({"cmd"}, "c")
+    -- Small delay to ensure clipboard is updated
+    hs.timer.doAfter(0.1, function()
+        local text = hs.pasteboard.getContents()
+        if text and text ~= "" then
+            hs.alert.show("🔊 Reading...", 1)
+            runCommand({MAIN_SCRIPT, "speak", text})
+        else
+            hs.alert.show("No text selected", 1)
+        end
+    end)
+end)
+
 -- Persona switches
 hs.hotkey.bind({"cmd", "shift"}, "1", function()
     hs.alert.show("👤 Assistant", 1)
