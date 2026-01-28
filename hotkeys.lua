@@ -58,15 +58,16 @@ local function runCommandAndType(args)
             return
         end
         if stdOut and stdOut ~= "" then
-            -- Trim whitespace and type at cursor
+            -- Trim whitespace
             local text = stdOut:gsub("^%s+", ""):gsub("%s+$", "")
             if text ~= "" then
-                -- Small delay to ensure focus is ready, then type
-                hs.timer.doAfter(0.1, function()
-                    hs.eventtap.keyStrokes(text)
+                -- Copy to clipboard and paste using AppleScript
+                hs.pasteboard.setContents(text)
+                hs.timer.doAfter(0.2, function()
+                    hs.osascript.applescript('tell application "System Events" to keystroke "v" using command down')
                 end)
             else
-                hs.alert.show("No text to type", 1)
+                hs.alert.show("Empty text", 1)
             end
         else
             hs.alert.show("No transcription", 1)
