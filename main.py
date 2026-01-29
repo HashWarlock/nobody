@@ -133,11 +133,13 @@ def handle_stop_and_process():
     conversation.add_assistant_message(response)
     print(f"AI: {response}", file=sys.stderr)
 
-    # Synthesize and play
+    # Synthesize and play with streaming (starts speaking immediately)
     print("Speaking...", file=sys.stderr)
-    speech = synthesizer.synthesize(response)
-    sd.play(speech, samplerate=24000)
-    sd.wait()
+    from audio_playback import StreamingAudioPlayer
+    player = StreamingAudioPlayer(sample_rate=24000)
+    player.start()
+    synthesizer.synthesize_streaming(response, player.add_chunk)
+    player.finish()
 
     print("Done", file=sys.stderr)
 
@@ -223,12 +225,14 @@ def handle_speak(text: str):
 
     # Load TTS
     from tts import MoshiSynthesizer
+    from audio_playback import StreamingAudioPlayer
     synthesizer = MoshiSynthesizer()
 
-    # Synthesize and play
-    speech = synthesizer.synthesize(text)
-    sd.play(speech, samplerate=24000)
-    sd.wait()
+    # Synthesize and play with streaming
+    player = StreamingAudioPlayer(sample_rate=24000)
+    player.start()
+    synthesizer.synthesize_streaming(text, player.add_chunk)
+    player.finish()
 
     print("Done", file=sys.stderr)
 

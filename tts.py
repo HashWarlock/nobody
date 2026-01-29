@@ -160,3 +160,72 @@ class MoshiSynthesizer:
             wav = wav[:, start:]
 
         return np.array(mx.clip(wav, -1, 1)).flatten()
+
+    def synthesize_streaming(self, text: str, on_audio_chunk):
+        """Synthesize text to audio with streaming output.
+
+        Calls on_audio_chunk with decoded audio as frames are generated,
+        allowing playback to start before synthesis completes.
+
+        Args:
+            text: Text to synthesize.
+            on_audio_chunk: Callback function(np.ndarray) called with each audio chunk.
+        """
+        if not text.strip():
+            return
+
+        # Prepare input
+        entries = self.tts_model.prepare_script([text], padding_between=1)
+
+        # Get voice conditioning
+        if self.tts_model.multi_speaker:
+            voice_path = self.tts_model.get_voice_path(self.voice)
+            voices = [voice_path]
+        else:
+            voices = []
+
+        attributes = self.tts_model.make_condition_attributes(voices, self.cfg_coef_conditioning)
+
+        # Get prefix for single-speaker models
+        prefixes = None
+        prefix_samples = 0
+        if not self.tts_model.multi_speaker:
+            prefix_path = hf_get(self.voice, self.voice_repo, check_local_file_exists=True)
+            prefixes = [self.tts_model.get_prefix(prefix_path)]
+            prefix_samples = int(self.mimi.sample_rate * prefixes[0].shape[-1] / self.mimi.frame_rate)
+
+        # Track whether we've passed the prefix
+        self._streaming_frame_idx = 0
+        self._prefix_frames = prefixes[0].shape[-1] if prefixes else 0
+        self._samples_sent = 0
+
+        def on_frame(frame):
+            """Callback for each generated frame - decode and send audio."""
+            self._streaming_frame_idx += 1
+
+            # Skip prefix frames (they contain the voice conditioning audio)
+            if self._streaming_frame_idx <= self._prefix_frames:
+                return
+
+            # Copy frame and ensure correct shape for decode_step
+            # on_frame receives shape (batch, codebooks), decode_step needs (batch, codebooks, 1)
+            frame_copy = mx.array(frame)
+            if frame_copy.ndim == 2:
+                frame_copy = frame_copy[:, :, None]
+
+            # Decode frame to PCM
+            pcm = self.tts_model.mimi.decode_step(frame_copy)
+            audio = np.array(mx.clip(pcm, -1, 1)).flatten()
+
+            if len(audio) > 0:
+                on_audio_chunk(audio)
+
+        # Generate with streaming callback
+        self.tts_model.generate(
+            [entries],
+            [attributes],
+            prefixes=prefixes,
+            cfg_is_no_prefix=self.cfg_is_no_prefix,
+            cfg_is_no_text=self.cfg_is_no_text,
+            on_frame=on_frame,
+        )
