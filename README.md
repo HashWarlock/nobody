@@ -74,6 +74,7 @@ echo "REDPILL_API_KEY=your-key-here" > .env
 | `Cmd+Shift+D` | Push-to-dictate (hold to speak, release to type at cursor) |
 | `Cmd+Shift+S` | Read selection (highlight text, press to hear it spoken) |
 | `Cmd+Shift+X` | Stop/Cancel |
+| `Cmd+Shift+M` | Model picker (searchable menu to switch LLM) |
 | `Cmd+Shift+1` | Switch to Assistant persona |
 | `Cmd+Shift+2` | Switch to Tutor persona |
 | `Cmd+Shift+3` | Switch to Creative persona |
@@ -145,56 +146,57 @@ personas:
 
 All models run in hardware-secured GPU TEE environments with cryptographic attestation.
 
-#### Phala Network (10 models)
+#### Phala Network (9 models)
 
-| Model ID | Name | Context | Max Output | Features |
-|----------|------|---------|------------|----------|
-| `z-ai/glm-4.7-flash` | GLM 4.7 Flash | 203k | 128k | General, multilingual |
-| `qwen/qwen3-embedding-8b` | Qwen3 Embedding 8B | 33k | 512 | Embeddings |
-| `phala/uncensored-24b` | Uncensored 24B | 33k | 8k | Uncensored |
-| `deepseek/deepseek-v3.2` | DeepSeek v3.2 | 164k | 8k | **Default**, reasoning |
-| `qwen/qwen3-vl-30b-a3b-instruct` | Qwen3 VL 30B | 128k | 8k | Vision |
-| `sentence-transformers/all-minilm-l6-v2` | All-MiniLM-L6-v2 | 512 | 512 | Embeddings |
-| `qwen/qwen-2.5-7b-instruct` | Qwen 2.5 7B Instruct | 33k | 8k | General |
-| `google/gemma-3-27b-it` | Gemma 3 27B IT | 54k | 8k | General |
-| `openai/gpt-oss-120b` | GPT OSS 120B | 131k | 8k | General |
-| `openai/gpt-oss-20b` | GPT OSS 20B | 131k | 8k | General |
+| Model ID | Name | Features |
+|----------|------|----------|
+| `deepseek/deepseek-v3.2` | DeepSeek v3.2 | Reasoning |
+| `phala/uncensored-24b` | Uncensored 24B | Uncensored |
+| `phala/glm-4.7-flash` | GLM 4.7 Flash | Multilingual, fast |
+| `phala/qwen3-vl-30b-a3b-instruct` | Qwen3 VL 30B | Vision |
+| `phala/qwen2.5-vl-72b-instruct` | Qwen 2.5 VL 72B | Vision |
+| `phala/qwen-2.5-7b-instruct` | Qwen 2.5 7B | General, fast |
+| `phala/gemma-3-27b-it` | Gemma 3 27B | General |
+| `phala/gpt-oss-120b` | GPT OSS 120B | General |
+| `phala/gpt-oss-20b` | GPT OSS 20B | General, fast |
 
-#### Tinfoil (4 models)
+#### Tinfoil (5 models)
 
-| Model ID | Name | Context | Max Output | Features |
-|----------|------|---------|------------|----------|
-| `moonshotai/kimi-k2-thinking` | Kimi K2 Thinking | 262k | 8k | Reasoning |
-| `deepseek/deepseek-r1-0528` | DeepSeek R1 | 164k | 8k | Reasoning |
-| `qwen/qwen3-coder-480b-a35b-instruct` | Qwen3 Coder 480B | 262k | 8k | Code |
-| `meta-llama/llama-3.3-70b-instruct` | Llama 3.3 70B Instruct | 131k | 8k | General |
+| Model ID | Name | Features |
+|----------|------|----------|
+| `moonshotai/kimi-k2.5` | Kimi K2.5 | **Default**, reasoning |
+| `moonshotai/kimi-k2-thinking` | Kimi K2 Thinking | Reasoning |
+| `deepseek/deepseek-r1-0528` | DeepSeek R1 | Reasoning |
+| `qwen/qwen3-coder-480b-a35b-instruct` | Qwen3 Coder 480B | Code |
+| `meta-llama/llama-3.3-70b-instruct` | Llama 3.3 70B | General |
 
 #### Chutes (1 model)
 
-| Model ID | Name | Context | Max Output | Features |
-|----------|------|---------|------------|----------|
-| `minimax/minimax-m2.1` | MiniMax M2.1 | 197k | 8k | General |
+| Model ID | Name | Features |
+|----------|------|----------|
+| `minimax/minimax-m2.1` | MiniMax M2.1 | General |
 
-#### Near-AI (3 models)
+#### Near-AI (4 models)
 
-| Model ID | Name | Context | Max Output | Features |
-|----------|------|---------|------------|----------|
-| `deepseek/deepseek-chat-v3.1` | DeepSeek Chat v3.1 | 164k | 8k | General |
-| `qwen/qwen3-30b-a3b-instruct-2507` | Qwen3 30B Instruct | 262k | 8k | General |
-| `z-ai/glm-4.6` | GLM 4.6 | 203k | 128k | General, multilingual |
+| Model ID | Name | Features |
+|----------|------|----------|
+| `deepseek/deepseek-chat-v3.1` | DeepSeek Chat v3.1 | General |
+| `qwen/qwen3-30b-a3b-instruct-2507` | Qwen3 30B | General |
+| `z-ai/glm-4.7` | GLM 4.7 | Multilingual |
+| `z-ai/glm-4.7-flash` | GLM 4.7 Flash | Multilingual, fast |
 
 ### Which Model Should I Use?
 
 | Use Case | Recommended Model | Why |
 |----------|-------------------|-----|
-| General chat | `deepseek/deepseek-v3.2` | Default, strong reasoning, GPU TEE |
+| General chat | `moonshotai/kimi-k2.5` | Default, strong reasoning |
 | Complex reasoning | `deepseek/deepseek-r1-0528` | Reasoning-optimized with R1 architecture |
-| Long context reasoning | `moonshotai/kimi-k2-thinking` | 262k context, reasoning-focused |
+| Long context | `moonshotai/kimi-k2-thinking` | Deep reasoning, extended thinking |
 | Coding | `qwen/qwen3-coder-480b-a35b-instruct` | Code-specialized, 262k context |
-| Vision tasks | `qwen/qwen3-vl-30b-a3b-instruct` | Only vision model, 128k context |
+| Vision tasks | `phala/qwen2.5-vl-72b-instruct` | Best vision model |
 | Fast + balanced | `meta-llama/llama-3.3-70b-instruct` | Llama 3.3, good all-around |
 | Uncensored | `phala/uncensored-24b` | No content restrictions |
-| Embeddings | `qwen/qwen3-embedding-8b` | Text embeddings |
+| Multilingual | `z-ai/glm-4.7` | Strong multilingual support |
 
 ## Troubleshooting
 

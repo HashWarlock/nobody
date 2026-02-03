@@ -237,12 +237,58 @@ def handle_speak(text: str):
     print("Done", file=sys.stderr)
 
 
+def handle_model(model_id: str | None):
+    """Handle model command - list or set model."""
+    from model_manager import ModelManager
+    model_manager = ModelManager()
+
+    if model_id is None or model_id == "list":
+        # List all models
+        print(model_manager.list_models_formatted())
+        return
+
+    if model_id == "reset":
+        # Clear override, return to default
+        model_manager.clear_override()
+        print(f"Reset to default: {model_manager.default_model}", file=sys.stderr)
+        return
+
+    # Set model
+    try:
+        model = model_manager.set_model(model_id)
+        print(f"Model: {model['name']} ({model_id})", file=sys.stderr)
+    except ValueError as e:
+        print(f"Error: {e}", file=sys.stderr)
+        print("Use 'model list' to see available models", file=sys.stderr)
+        sys.exit(1)
+
+
+def handle_model_json():
+    """Output models as JSON for Hammerspoon chooser."""
+    import json
+    from model_manager import ModelManager
+    model_manager = ModelManager()
+
+    current = model_manager.get_current_model()
+    models = []
+    for m in model_manager.list_models():
+        models.append({
+            "id": m["id"],
+            "name": m["name"],
+            "provider": m.get("provider", ""),
+            "features": m.get("features", []),
+            "current": m["id"] == current
+        })
+
+    print(json.dumps(models))
+
+
 def main():
     """Main entry point."""
     parser = argparse.ArgumentParser(description="Voice Realtime Conversation")
-    parser.add_argument("command", choices=["start", "stop_and_process", "stop", "persona", "dictate", "speak"],
+    parser.add_argument("command", choices=["start", "stop_and_process", "stop", "persona", "dictate", "speak", "model", "model_json"],
                         help="Command to execute")
-    parser.add_argument("text", nargs="?", help="Text for speak command, or persona ID for persona command")
+    parser.add_argument("text", nargs="?", help="Text for speak command, persona ID for persona command, or model ID for model command")
 
     args = parser.parse_args()
 
@@ -265,6 +311,10 @@ def main():
             print("Error: persona command requires persona_id", file=sys.stderr)
             sys.exit(1)
         handle_persona(args.text)
+    elif args.command == "model":
+        handle_model(args.text)
+    elif args.command == "model_json":
+        handle_model_json()
 
 
 if __name__ == "__main__":

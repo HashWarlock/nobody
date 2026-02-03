@@ -1,0 +1,89 @@
+# GPU TEE Models available via RedPill API
+# All models run in hardware-secured GPU TEE environments
+
+default_model: "moonshotai/kimi-k2.5"
+
+models:
+  # Phala Network
+  - id: "deepseek/deepseek-v3.2"
+    name: "DeepSeek v3.2"
+    provider: "phala"
+    features: ["reasoning"]
+  - id: "phala/uncensored-24b"
+    name: "Uncensored 24B"
+    provider: "phala"
+    features: ["uncensored"]
+  - id: "phala/glm-4.7-flash"
+    name: "GLM 4.7 Flash"
+    provider: "phala"
+    features: ["multilingual", "fast"]
+  - id: "phala/qwen3-vl-30b-a3b-instruct"
+    name: "Qwen3 VL 30B"
+    provider: "phala"
+    features: ["vision"]
+  - id: "phala/qwen2.5-vl-72b-instruct"
+    name: "Qwen 2.5 VL 72B"
+    provider: "phala"
+    features: ["vision"]
+  - id: "phala/qwen-2.5-7b-instruct"
+    name: "Qwen 2.5 7B"
+    provider: "phala"
+    features: ["general", "fast"]
+  - id: "phala/gemma-3-27b-it"
+    name: "Gemma 3 27B"
+    provider: "phala"
+    features: ["general"]
+  - id: "phala/gpt-oss-120b"
+    name: "GPT OSS 120B"
+    provider: "phala"
+    features: ["general"]
+  - id: "phala/gpt-oss-20b"
+    name: "GPT OSS 20B"
+    provider: "phala"
+    features: ["general", "fast"]
+
+  # Tinfoil
+  - id: "moonshotai/kimi-k2.5"
+    name: "Kimi K2.5"
+    provider: "tinfoil"
+    features: ["reasoning"]
+  - id: "moonshotai/kimi-k2-thinking"
+    name: "Kimi K2 Thinking"
+    provider: "tinfoil"
+    features: ["reasoning"]
+  - id: "deepseek/deepseek-r1-0528"
+    name: "DeepSeek R1"
+    provider: "tinfoil"
+    features: ["reasoning"]
+  - id: "qwen/qwen3-coder-480b-a35b-instruct"
+    name: "Qwen3 Coder 480B"
+    provider: "tinfoil"
+    features: ["code"]
+  - id: "meta-llama/llama-3.3-70b-instruct"
+    name: "Llama 3.3 70B"
+    provider: "tinfoil"
+    features: ["general"]
+
+  # Chutes
+  - id: "minimax/minimax-m2.1"
+    name: "MiniMax M2.1"
+    provider: "chutes"
+    features: ["general"]
+
+  # Near-AI
+  - id: "deepseek/deepseek-chat-v3.1"
+    name: "DeepSeek Chat v3.1"
+    provider: "near-ai"
+    features: ["general"]
+  - id: "qwen/qwen3-30b-a3b-instruct-2507"
+    name: "Qwen3 30B"
+    provider: "near-ai"
+    features: ["general"]
+  - id: "z-ai/glm-4.7"
+    name: "GLM 4.7"
+    provider: "near-ai"
+    features: ["multilingual"]
+  - id: "z-ai/glm-4.7-flash"
+    name: "GLM 4.7 Flash"
+    provider: "near-ai"
+    features: ["multilingual", "fast"]

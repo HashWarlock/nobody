@@ -52,3 +52,9 @@ MOSHI_SAMPLE_RATE = 24000  # Audio sample rate
 
 # Persona config file
 PERSONAS_FILE = PROJECT_DIR / "personas.yaml"
+
+# Models config file
+MODELS_FILE = PROJECT_DIR / "models.yaml"
+
+# Model override file (stores user's current model selection)
+MODEL_OVERRIDE_FILE = TEMP_DIR / "model_override.txt"

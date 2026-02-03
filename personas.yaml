@@ -6,7 +6,7 @@ personas:
     hotkey: "cmd+shift+1"
     llm:
       provider: "redpill"
-      model: "phala/uncensored-24b"
+      model: "moonshotai/kimi-k2.5"
     voice: "default"
     system_prompt: |
       You are a concise, helpful assistant. Give brief, actionable answers.
@@ -17,7 +17,7 @@ personas:
     hotkey: "cmd+shift+2"
     llm:
       provider: "redpill"
-      model: "z-ai/glm-4.6"
+      model: "z-ai/glm-4.7"
     voice: "cloned_tutor"
     system_prompt: |
       You are a patient tutor who explains concepts clearly.
@@ -29,7 +29,7 @@ personas:
     hotkey: "cmd+shift+3"
     llm:
       provider: "redpill"
-      model: "z-ai/glm-4.6"
+      model: "z-ai/glm-4.7"
     voice: "cloned_creative"
     system_prompt: |
       You are a creative collaborator who builds on ideas.

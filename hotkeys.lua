@@ -145,6 +145,55 @@ hs.hotkey.bind({"cmd", "shift"}, "4", function()
     runCommand({MAIN_SCRIPT, "persona", "casual"})
 end)
 
+-- Model chooser: Cmd+Shift+M
+hs.hotkey.bind({"cmd", "shift"}, "M", function()
+    -- Get models as JSON from Python
+    local task = hs.task.new(PYTHON, function(exitCode, stdOut, stdErr)
+        if exitCode ~= 0 or not stdOut or stdOut == "" then
+            hs.alert.show("Failed to load models", 2)
+            return
+        end
+
+        local ok, models = pcall(hs.json.decode, stdOut)
+        if not ok or not models then
+            hs.alert.show("Failed to parse models", 2)
+            return
+        end
+
+        -- Build chooser choices
+        local choices = {}
+        for _, model in ipairs(models) do
+            local text = model.name
+            if model.current then
+                text = "✓ " .. text
+            end
+            local subText = model.id .. " [" .. model.provider .. "]"
+            if #model.features > 0 then
+                subText = subText .. " - " .. table.concat(model.features, ", ")
+            end
+            table.insert(choices, {
+                text = text,
+                subText = subText,
+                modelId = model.id,
+                modelName = model.name
+            })
+        end
+
+        -- Show chooser
+        local chooser = hs.chooser.new(function(choice)
+            if choice then
+                hs.alert.show("🤖 " .. choice.modelName, 1)
+                runCommand({MAIN_SCRIPT, "model", choice.modelId})
+            end
+        end)
+        chooser:choices(choices)
+        chooser:placeholderText("Select a model...")
+        chooser:searchSubText(true)
+        chooser:show()
+    end, {MAIN_SCRIPT, "model_json"})
+    task:start()
+end)
+
 -- Reload: Cmd+Shift+R
 hs.hotkey.bind({"cmd", "shift"}, "R", function()
     hs.reload()

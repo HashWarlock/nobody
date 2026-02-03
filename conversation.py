@@ -5,6 +5,7 @@ from typing import Any
 
 from persona_manager import PersonaManager
 from llm_router import LLMRouter
+from model_manager import ModelManager
 
 
 class State(Enum):
@@ -88,13 +89,22 @@ class Conversation:
     def get_response(self) -> str:
         """Get LLM response for current conversation.
 
+        Uses model override if set, otherwise uses persona's default model.
+
         Returns:
             Assistant response text.
         """
         persona = self.persona_manager.get_current()
 
+        # Check for model override
+        llm_config = persona["llm"].copy()
+        model_manager = ModelManager()
+        override_model = model_manager.get_current_model()
+        if override_model:
+            llm_config["model"] = override_model
+
         response = self.llm_router.chat(
-            llm_config=persona["llm"],
+            llm_config=llm_config,
             messages=self.messages,
             system_prompt=persona["system_prompt"]
         )
