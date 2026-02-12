@@ -1,7 +1,7 @@
 # GPU TEE Models available via RedPill API
 # All models run in hardware-secured GPU TEE environments
 
-default_model: "moonshotai/kimi-k2.5"
+default_model: "z-ai/glm-5"
 
 models:
   # Phala Network
@@ -87,3 +87,7 @@ models:
     name: "GLM 4.7 Flash"
     provider: "near-ai"
     features: ["multilingual", "fast"]
+  - id: "z-ai/glm-5"
+    name: "GLM 5"
+    provider: "near-ai"
+    features: ["multilingual", "reasoning"]

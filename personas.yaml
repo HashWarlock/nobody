@@ -6,7 +6,7 @@ personas:
     hotkey: "cmd+shift+1"
     llm:
       provider: "redpill"
-      model: "moonshotai/kimi-k2.5"
+      model: "z-ai/glm-5"
     voice: "default"
     system_prompt: |
       You are a concise, helpful assistant. Give brief, actionable answers.
@@ -52,7 +52,7 @@ personas:
     hotkey: "cmd+shift+5"
     llm:
       provider: "redpill"
-      model: "moonshotai/kimi-k2.5"
+      model: "z-ai/glm-5"
     voice: "default"
     enable_tools: true
     tools: "harada"
