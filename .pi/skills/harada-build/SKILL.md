@@ -1,128 +1,140 @@
 ---
 name: harada-build
 description: >
-  Build macro for the Harada Method extension. Implements the staged build plan
-  step by step, with verification at each phase. Use /skill:harada-build to execute
-  the build pipeline or resume from a specific step.
+  Build macro for the Harada Method voice agent integration. Implements the
+  plan to make nobody a Harada coach you talk to with one hotkey, with a
+  Hammerspoon webview overlay showing progress and conversation.
+  Use /skill:harada-build to execute the build pipeline.
 ---
 
-# Harada Method — Build Macro
+# Harada Voice Agent — Build Macro
 
-This skill guides the implementation and testing of the Harada Method pi extension.
-The extension is located at `.pi/extensions/harada-method/`.
-
-## Pre-flight Check
-
-Before building, verify the scaffold exists:
-
+Read the full plan first:
 ```bash
-ls -la .pi/extensions/harada-method/src/
-ls -la .pi/extensions/harada-method/src/data/
-ls -la .pi/extensions/harada-method/src/tools/
-ls -la .pi/extensions/harada-method/src/ui/
-ls -la .pi/skills/harada-coach/SKILL.md
-ls -la .pi/prompts/
+cat .pi/harada-voice-plan.md
 ```
 
-Read the full implementation plan:
+## Pre-flight
+
+Verify the project structure:
 ```bash
-cat .pi/harada-method-plan.md
+ls main.py llm_router.py conversation.py persona_manager.py personas.yaml hotkeys.lua
+ls .pi/harada/ 2>/dev/null || echo "No harada data yet (OK for first build)"
+ls .pi/extensions/harada-method/src/data/types.ts  # data types reference
 ```
 
 ## Build Steps
 
-Execute each step in order. After each step, verify by reading the created files and confirming they compile.
+### Step 1: `harada_tools.py` — Tool Functions
 
-### Step 1: Verify Data Layer
-Files should already exist:
-- `src/data/types.ts` — All TypeScript interfaces
-- `src/data/store.ts` — JSON persistence with atomic writes
-- `src/data/analytics.ts` — Progress calculations (streaks, rates, completion)
+Create `harada_tools.py` in project root. This is the Python equivalent of the pi extension tools, reading/writing the same `.pi/harada/*.json` files.
 
-Verification: Read each file. Ensure types are complete and analytics functions are pure.
+Requirements:
+- Read `.pi/harada-voice-plan.md` section "Step 2: Harada Tool Functions"
+- Read `.pi/extensions/harada-method/src/data/types.ts` for the JSON data shapes
+- Tool definitions in OpenAI function calling format
+- Tools must be voice-friendly: fuzzy habit name matching, natural language output
+- `execute_tool(name, arguments)` dispatcher function
+- Tools: `list_habits`, `check_habit`, `uncheck_habit`, `get_progress`, `write_journal`, `read_journal`, `complete_action`, `get_goals`, `get_affirmation`
+- All read/write from `{PROJECT_DIR}/.pi/harada/` directory
+- Return human-readable strings (agent speaks these to the user)
 
-### Step 2: Verify Tools
-Files should already exist:
-- `src/tools/goal-form.ts` — harada_goal_form tool
-- `src/tools/ow64.ts` — harada_ow64 tool
-- `src/tools/habits.ts` — harada_habits tool
-- `src/tools/journal.ts` — harada_journal tool
-- `src/tools/progress.ts` — harada_progress tool
+### Step 2: `llm_router.py` — Add Tool Calling
 
-Verification: Read each tool file. Ensure all actions are implemented and error handling is present.
+Modify `llm_router.py` to add `chat_with_tools()`:
 
-### Step 3: Verify UI Overlays
-Files should already exist:
-- `src/ui/dashboard.ts` — Main dashboard overlay
-- `src/ui/ow64-grid.ts` — OW64 mandala grid overlay
-- `src/ui/habit-tracker.ts` — Habit tracker overlay with interactive checking
+Requirements:
+- Read `.pi/harada-voice-plan.md` section "Step 1: Add Tool Calling to LLM Router"
+- New method `chat_with_tools(llm_config, messages, system_prompt, tools, tool_executor)`
+- RedPill API is OpenAI-compatible: send `tools` param, handle `tool_calls` in response
+- Loop: call LLM → if tool_calls, execute each, append tool results, call LLM again → until text response
+- Max 5 tool call rounds to prevent infinite loops
+- Existing `chat()` method unchanged (backward compatible)
 
-Verification: Read each UI file. Ensure they handle keyboard input and use theme properly.
+### Step 3: `conversation.py` — Add Tool Support
 
-### Step 4: Verify Extension Entry Point
-File should already exist:
-- `src/index.ts` — Registers all tools, commands, shortcuts, events
+Modify `conversation.py`:
 
-Verification: Ensure all tools are registered, commands wired, and context injection works.
+Requirements:
+- New method `get_response_with_tools(tools, tool_executor)`
+- Calls `llm_router.chat_with_tools()` instead of `chat()`
+- Tool call messages should NOT be stored in conversation history (only user + final assistant text)
+- Everything else unchanged
 
-### Step 5: Verify Skills & Prompts
-Files should already exist:
-- `.pi/skills/harada-coach/SKILL.md` — Coaching skill
-- `.pi/prompts/checkin.md` — Morning check-in template
-- `.pi/prompts/reflect.md` — Evening reflection template
-- `.pi/prompts/review.md` — Weekly review template
+### Step 4: `personas.yaml` — Add Harada Persona
 
-### Step 6: Integration Test
-1. Start pi with the extension: `pi -e .pi/extensions/harada-method/src/index.ts`
-2. Verify extension loads without errors
-3. Test `/harada-setup` command appears
-4. Test tool availability — ask the agent "What harada tools do you have?"
-5. Test goal form creation — walk through setup
-6. Test OW64 chart creation
-7. Test habit tracking
-8. Test journal entry
-9. Test `/harada` dashboard overlay
-10. Test `/ow64` grid overlay
-11. Test `/habits` tracker overlay
-12. Test progress snapshot
+Add `harada` entry:
 
-### Step 7: Polish
-1. Fix any TypeScript errors found during testing
-2. Ensure theme invalidation works correctly
-3. Test edge cases: empty data, first run, missing fields
-4. Verify widget and status updates after each tool call
-5. Test coaching nudges on session start
+Requirements:
+- Read `.pi/harada-voice-plan.md` section "Step 3: Harada Persona" for the system prompt
+- `enable_tools: true` and `tools: "harada"` fields
+- Uses `moonshotai/kimi-k2.5` model (good at tool calling)
+- System prompt emphasizes: voice mode, concise responses, always use tools for data, warm coaching
 
-### Step 8: Git Commit
+### Step 5: `main.py` — Wire Tools + Overlay State
+
+Modify `handle_stop_and_process()`:
+
+Requirements:
+- Read `.pi/harada-voice-plan.md` section "Step 4" and "Step 5"
+- When persona has `enable_tools` + `tools == "harada"`, import and use harada_tools
+- After getting response, write overlay state to `/tmp/claude/voice-realtime/harada-overlay.json`
+- Overlay state includes: conversation history, dashboard data (read from .pi/harada/*.json)
+- Existing non-tool personas must work exactly the same (backward compatible)
+
+### Step 6: `harada_overlay.lua` — Hammerspoon Dashboard Webview
+
+Create `harada_overlay.lua`:
+
+Requirements:
+- Read `.pi/harada-voice-plan.md` section "Step 6: Hammerspoon Dashboard Overlay"
+- `hs.webview` positioned at right side of screen
+- `hs.pathwatcher` on `/tmp/claude/voice-realtime/harada-overlay.json`
+- When file changes → reload data → update HTML
+- HTML/CSS dashboard showing: north star, habits with checkmarks, OW64 progress bar, streaks, mood/energy, conversation transcript
+- Dark theme, semi-transparent, rounded corners
+- Dismiss with Escape or X button
+- Functions: `showHaradaOverlay()`, `hideHaradaOverlay()`, `updateHaradaOverlay()`
+
+### Step 7: `hotkeys.lua` — Add Persona Hotkey + Load Overlay
+
+Modify `hotkeys.lua`:
+
+Requirements:
+- Add `Cmd+Shift+5` to switch to harada persona and show overlay
+- Load `harada_overlay.lua` at bottom (same pattern as existing code)
+- When switching away from harada persona, optionally hide overlay
+
+### Step 8: Integration Test
+
+1. Switch to harada persona: `Cmd+Shift+5`
+2. Verify overlay appears (may be empty if no data yet)
+3. Push-to-talk: "Help me set up my north star goal"
+4. Verify agent responds via voice with coaching guidance
+5. Push-to-talk: "My north star is to become a senior ML engineer by December 2026"
+6. Verify agent calls tools, overlay updates with goal
+7. Push-to-talk: "What habits should I track daily?"
+8. Verify conversation appears in overlay
+9. Switch to another persona: `Cmd+Shift+1` — verify voice works normally without tools
+
+### Step 9: Git Commit
+
 ```bash
-git add .pi/extensions/harada-method/ .pi/skills/ .pi/prompts/ .pi/harada-method-plan.md
-git commit -m "feat: add Harada Method goal achievement extension
+git add harada_tools.py harada_overlay.lua llm_router.py conversation.py main.py personas.yaml hotkeys.lua
+git commit -m "feat: integrate Harada coach into voice pipeline with dashboard overlay
 
-- Long-term Goal Form for north star definition
-- Open Window 64 chart with 8 goals × 8 actions
-- Daily habit tracking with streaks and completion rates
-- Daily journal with mood/energy tracking
-- Visual dashboard overlay (Ctrl+H or /harada)
-- OW64 mandala grid overlay (/ow64)
-- Interactive habit tracker overlay (/habits)
-- Coaching skill with prompt templates
-- Context injection for agent awareness
-- Progress analytics and insights"
+- Add tool calling support to LLM router (OpenAI function calling)
+- Add harada_tools.py with voice-friendly tool functions
+- Add harada persona with coaching system prompt
+- Add Hammerspoon webview overlay showing progress + conversation
+- One hotkey: Cmd+Shift+T (push-to-talk, same as always)
+- Cmd+Shift+5 to switch to Harada coach persona"
 ```
 
-## Resume Points
+## Key Principles
 
-If you need to resume from a specific step, the user can say:
-- "Resume from step N" to skip to that step
-- "Fix step N" to re-examine and fix issues in that step
-- "Test overlays" to jump to overlay testing
-- "Full build" to run all steps in sequence
-
-## Important Notes
-
-- The extension uses `@sinclair/typebox` for schema definitions and `@mariozechner/pi-ai` for `StringEnum`
-- All imports from sibling files use `.js` extensions (ESM compatibility)
-- Data persists to `.pi/harada/` as JSON files
-- Overlay components use `{ overlay: true }` in `ctx.ui.custom()`
-- State reconstruction happens on session events (start, switch, fork, tree)
-- Widget updates trigger after every harada tool call via `tool_result` event
+1. **One hotkey** — Cmd+Shift+T is the only interaction. Just talk.
+2. **Voice-first** — tool output is spoken, not displayed as text. Keep responses SHORT.
+3. **Same data** — reads/writes .pi/harada/*.json, compatible with pi extension.
+4. **Backward compatible** — all existing personas and hotkeys work unchanged.
+5. **Overlay is passive** — it shows up and updates, but all interaction is voice.
