@@ -1,7 +1,7 @@
 """Conversation state machine for managing voice interaction flow."""
 
 from enum import Enum, auto
-from typing import Any
+from typing import Any, Callable
 
 from persona_manager import PersonaManager
 from llm_router import LLMRouter
@@ -107,6 +107,41 @@ class Conversation:
             llm_config=llm_config,
             messages=self.messages,
             system_prompt=persona["system_prompt"]
+        )
+
+        return response
+
+    def get_response_with_tools(
+        self,
+        tools: list[dict],
+        tool_executor: Callable[[str, dict], str],
+    ) -> str:
+        """Get LLM response with tool calling support.
+
+        The tool call loop happens inside the LLM router. Only the user
+        message and final assistant text are kept in conversation history.
+
+        Args:
+            tools: OpenAI-format tool definitions.
+            tool_executor: Function(name, arguments) -> result string.
+
+        Returns:
+            Final assistant response text.
+        """
+        persona = self.persona_manager.get_current()
+
+        llm_config = persona["llm"].copy()
+        model_manager = ModelManager()
+        override_model = model_manager.get_current_model()
+        if override_model:
+            llm_config["model"] = override_model
+
+        response = self.llm_router.chat_with_tools(
+            llm_config=llm_config,
+            messages=self.messages,
+            system_prompt=persona["system_prompt"],
+            tools=tools,
+            tool_executor=tool_executor,
         )
 
         return response

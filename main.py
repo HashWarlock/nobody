@@ -32,6 +32,7 @@ from conversation import Conversation
 RECORDING_PID_FILE = config.TEMP_DIR / "recording.pid"
 RECORDING_STOP_FILE = config.TEMP_DIR / "recording.stop"
 AUDIO_FILE = config.TEMP_DIR / "recording.npy"
+OVERLAY_STATE_FILE = config.TEMP_DIR / "harada-overlay.json"
 SCRIPT_DIR = config.PROJECT_DIR
 
 
@@ -50,6 +51,45 @@ def remove_file(path):
         path.unlink()
     except FileNotFoundError:
         pass
+
+
+def _write_overlay_state(transcript: str, response: str, conversation):
+    """Write overlay state JSON for Hammerspoon dashboard.
+
+    Reads existing conversation history from the overlay file and appends
+    the new exchange, then writes updated dashboard data.
+    """
+    import json
+    from harada_tools import get_overlay_state
+
+    # Load existing conversation history from overlay file
+    conv_history = []
+    if OVERLAY_STATE_FILE.exists():
+        try:
+            with open(OVERLAY_STATE_FILE) as f:
+                existing = json.load(f)
+                conv_history = existing.get("conversation", [])
+        except (json.JSONDecodeError, IOError):
+            pass
+
+    # Append new exchange
+    conv_history.append({"role": "user", "text": transcript})
+    conv_history.append({"role": "assistant", "text": response})
+
+    # Keep last 20 exchanges (40 messages) to prevent unbounded growth
+    if len(conv_history) > 40:
+        conv_history = conv_history[-40:]
+
+    # Build full overlay state with dashboard data
+    state = get_overlay_state(conv_history)
+
+    # Write atomically
+    tmp = str(OVERLAY_STATE_FILE) + ".tmp"
+    with open(tmp, "w") as f:
+        json.dump(state, f, indent=2)
+    os.rename(tmp, str(OVERLAY_STATE_FILE))
+
+    print("Overlay state updated", file=sys.stderr)
 
 
 def handle_start():
@@ -129,9 +169,25 @@ def handle_stop_and_process():
     conversation = Conversation(persona_manager, llm_router)
 
     conversation.add_user_message(transcript)
-    response = conversation.get_response()
+
+    # Check if persona uses tool calling
+    persona = persona_manager.get_current()
+    if persona.get("enable_tools") and persona.get("tools") == "harada":
+        print("Using Harada tools...", file=sys.stderr)
+        from harada_tools import TOOL_DEFINITIONS, execute_tool, get_overlay_state
+        response = conversation.get_response_with_tools(
+            tools=TOOL_DEFINITIONS,
+            tool_executor=execute_tool,
+        )
+    else:
+        response = conversation.get_response()
+
     conversation.add_assistant_message(response)
     print(f"AI: {response}", file=sys.stderr)
+
+    # Write overlay state for Hammerspoon (harada persona only)
+    if persona.get("enable_tools") and persona.get("tools") == "harada":
+        _write_overlay_state(transcript, response, conversation)
 
     # Synthesize and play with streaming (starts speaking immediately)
     print("Speaking...", file=sys.stderr)

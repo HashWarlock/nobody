@@ -199,6 +199,25 @@ hs.hotkey.bind({"cmd", "shift"}, "R", function()
     hs.reload()
 end)
 
+-- ── Harada Coach ─────────────────────────────────────────
+
+-- Load overlay module
+local haradaOverlayPath = (SCRIPT_DIR and (SCRIPT_DIR .. "/harada_overlay.lua"))
+    or (HOME .. "/Projects/AI/nobody/harada_overlay.lua")
+local haradaLoader, haradaErr = loadfile(haradaOverlayPath)
+if haradaLoader then
+    haradaLoader()
+else
+    print("Harada overlay not loaded: " .. (haradaErr or "unknown"))
+end
+
+-- Cmd+Shift+5: Switch to Harada Coach persona + show overlay
+hs.hotkey.bind({"cmd", "shift"}, "5", function()
+    hs.alert.show("🎯 Harada Coach", 1)
+    runCommand({MAIN_SCRIPT, "persona", "harada"})
+    if showHaradaOverlay then showHaradaOverlay() end
+end)
+
 hs.alert.show("Voice Realtime ready!", 2)
 
 -- Load Harada Method hotkeys
