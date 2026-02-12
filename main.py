@@ -170,24 +170,35 @@ def handle_stop_and_process():
 
     conversation.add_user_message(transcript)
 
-    # Check if persona uses tool calling
-    persona = persona_manager.get_current()
-    if persona.get("enable_tools") and persona.get("tools") == "harada":
-        print("Using Harada tools...", file=sys.stderr)
-        from harada_tools import TOOL_DEFINITIONS, execute_tool, get_overlay_state
-        response = conversation.get_response_with_tools(
-            tools=TOOL_DEFINITIONS,
-            tool_executor=execute_tool,
-        )
-    else:
-        response = conversation.get_response()
+    try:
+        # Check if persona uses tool calling
+        persona = persona_manager.get_current()
+        print(f"Persona: {persona.get('name', 'unknown')}, tools={persona.get('enable_tools', False)}", file=sys.stderr)
+
+        if persona.get("enable_tools") and persona.get("tools") == "harada":
+            print("Using Harada tools...", file=sys.stderr)
+            from harada_tools import TOOL_DEFINITIONS, execute_tool, get_overlay_state
+            response = conversation.get_response_with_tools(
+                tools=TOOL_DEFINITIONS,
+                tool_executor=execute_tool,
+            )
+        else:
+            response = conversation.get_response()
+    except Exception as e:
+        import traceback
+        print(f"LLM ERROR: {e}", file=sys.stderr)
+        traceback.print_exc(file=sys.stderr)
+        response = "Sorry, I had trouble processing that. Check the logs for details."
 
     conversation.add_assistant_message(response)
     print(f"AI: {response}", file=sys.stderr)
 
     # Write overlay state for Hammerspoon (harada persona only)
-    if persona.get("enable_tools") and persona.get("tools") == "harada":
-        _write_overlay_state(transcript, response, conversation)
+    try:
+        if persona.get("enable_tools") and persona.get("tools") == "harada":
+            _write_overlay_state(transcript, response, conversation)
+    except Exception as e:
+        print(f"Overlay state write error: {e}", file=sys.stderr)
 
     # Synthesize and play with streaming (starts speaking immediately)
     print("Speaking...", file=sys.stderr)

@@ -201,14 +201,17 @@ end)
 
 -- ── Harada Coach ─────────────────────────────────────────
 
+-- Derive project dir from MAIN_SCRIPT path
+local PROJECT_DIR = MAIN_SCRIPT and MAIN_SCRIPT:match("(.+)/[^/]+$") or (HOME .. "/Projects/AI/nobody")
+
 -- Load overlay module
-local haradaOverlayPath = (SCRIPT_DIR and (SCRIPT_DIR .. "/harada_overlay.lua"))
-    or (HOME .. "/Projects/AI/nobody/harada_overlay.lua")
-local haradaLoader, haradaErr = loadfile(haradaOverlayPath)
-if haradaLoader then
-    haradaLoader()
+local haradaOverlayPath = PROJECT_DIR .. "/harada_overlay.lua"
+local haradaOverlayLoader, haradaOverlayErr = loadfile(haradaOverlayPath)
+if haradaOverlayLoader then
+    haradaOverlayLoader()
+    print("Harada overlay loaded from: " .. haradaOverlayPath)
 else
-    print("Harada overlay not loaded: " .. (haradaErr or "unknown"))
+    print("Harada overlay not loaded: " .. (haradaOverlayErr or "file not found: " .. haradaOverlayPath))
 end
 
 -- Cmd+Shift+5: Switch to Harada Coach persona + show overlay
@@ -219,13 +222,3 @@ hs.hotkey.bind({"cmd", "shift"}, "5", function()
 end)
 
 hs.alert.show("Voice Realtime ready!", 2)
-
--- Load Harada Method hotkeys
-local haradaPath = SCRIPT_DIR and (SCRIPT_DIR .. "/harada-hotkeys.lua")
-    or (HOME .. "/Projects/AI/nobody/harada-hotkeys.lua")
-local haradaLoader, err = loadfile(haradaPath)
-if haradaLoader then
-    haradaLoader()
-else
-    print("Harada hotkeys not loaded: " .. (err or "unknown error"))
-end

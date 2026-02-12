@@ -87,23 +87,31 @@ class LLMRouter:
         working_messages = [{"role": "system", "content": system_prompt}] + list(messages)
 
         for round_num in range(self.MAX_TOOL_ROUNDS):
-            print(f"LLM call (round {round_num + 1})...", file=sys.stderr)
+            print(f"LLM call (round {round_num + 1}), model={model}...", file=sys.stderr)
 
-            response = httpx.post(
-                f"{self.redpill_base_url}/chat/completions",
-                headers={
-                    "Authorization": f"Bearer {self.redpill_api_key}",
-                    "Content-Type": "application/json"
-                },
-                json={
-                    "model": model,
-                    "messages": working_messages,
-                    "tools": tools,
-                },
-                timeout=self.timeout,
-            )
-            response.raise_for_status()
-            result = response.json()
+            try:
+                response = httpx.post(
+                    f"{self.redpill_base_url}/chat/completions",
+                    headers={
+                        "Authorization": f"Bearer {self.redpill_api_key}",
+                        "Content-Type": "application/json"
+                    },
+                    json={
+                        "model": model,
+                        "messages": working_messages,
+                        "tools": tools,
+                    },
+                    timeout=self.timeout,
+                )
+                print(f"  HTTP {response.status_code}", file=sys.stderr)
+                response.raise_for_status()
+                result = response.json()
+            except httpx.HTTPStatusError as e:
+                print(f"  API error: {e.response.status_code} {e.response.text[:500]}", file=sys.stderr)
+                raise
+            except httpx.RequestError as e:
+                print(f"  Request error: {e}", file=sys.stderr)
+                raise
 
             choice = result["choices"][0]
             message = choice["message"]
