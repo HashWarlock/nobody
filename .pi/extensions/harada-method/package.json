@@ -1,0 +1,9 @@
+{
+  "name": "harada-method",
+  "version": "0.1.0",
+  "description": "Harada Method goal achievement system for pi — north star goals, OW64 chart, daily habits, journaling, and visual dashboard",
+  "pi": {
+    "extensions": ["./src/index.ts"]
+  },
+  "dependencies": {}
+}
