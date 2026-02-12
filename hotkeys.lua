@@ -200,3 +200,13 @@ hs.hotkey.bind({"cmd", "shift"}, "R", function()
 end)
 
 hs.alert.show("Voice Realtime ready!", 2)
+
+-- Load Harada Method hotkeys
+local haradaPath = SCRIPT_DIR and (SCRIPT_DIR .. "/harada-hotkeys.lua")
+    or (HOME .. "/Projects/AI/nobody/harada-hotkeys.lua")
+local haradaLoader, err = loadfile(haradaPath)
+if haradaLoader then
+    haradaLoader()
+else
+    print("Harada hotkeys not loaded: " .. (err or "unknown error"))
+end
