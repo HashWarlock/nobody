@@ -40,11 +40,30 @@ end
 local PYTHON = findPython()
 local MAIN_SCRIPT = findMainScript()
 
+-- Logging
+local LOG_FILE = "/tmp/claude/voice-realtime/voice.log"
+local function logWrite(msg)
+    local f = io.open(LOG_FILE, "a")
+    if f then
+        f:write(os.date("[%Y-%m-%d %H:%M:%S] ") .. msg .. "\n")
+        f:close()
+    end
+end
+
 -- Run Python command
 local function runCommand(args)
+    local cmdDesc = table.concat(args, " ")
+    logWrite("CMD: " .. cmdDesc)
     local task = hs.task.new(PYTHON, function(exitCode, stdOut, stdErr)
+        logWrite("EXIT: " .. tostring(exitCode) .. " | " .. cmdDesc)
+        if stdErr and stdErr ~= "" then
+            logWrite("STDERR:\n" .. stdErr)
+        end
+        if stdOut and stdOut ~= "" then
+            logWrite("STDOUT:\n" .. stdOut)
+        end
         if exitCode ~= 0 then
-            hs.notify.new({title = "Voice Error", informativeText = stdErr or "Command failed"}):send()
+            hs.notify.new({title = "Voice Error", informativeText = (stdErr or "Command failed"):sub(1, 200)}):send()
         end
     end, args)
     task:start()

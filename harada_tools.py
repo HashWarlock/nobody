@@ -60,19 +60,34 @@ def _fuzzy_match(query, candidates):
     """Find best matching candidate by substring (case-insensitive).
     Returns (matched_item, score) or (None, 0)."""
     query_lower = query.lower().strip()
+    if not query_lower:
+        return None, 0
     best = None
     best_score = 0
     for item in candidates:
         name_lower = item["name"].lower()
         if query_lower == name_lower:
             return item, 100  # Exact match
+        # Check if query words all appear in name
+        query_words = query_lower.split()
+        name_words = name_lower.split()
+        all_words_match = all(
+            any(qw in nw for nw in name_words) for qw in query_words
+        )
         if query_lower in name_lower:
-            score = len(query_lower) / len(name_lower) * 90
+            # Substring match — score based on coverage, minimum 40 for any match
+            score = max(40, len(query_lower) / len(name_lower) * 90)
+            if score > best_score:
+                best = item
+                best_score = score
+        elif all_words_match:
+            # All query words found in name words
+            score = 60
             if score > best_score:
                 best = item
                 best_score = score
         elif name_lower in query_lower:
-            score = len(name_lower) / len(query_lower) * 80
+            score = max(40, len(name_lower) / len(query_lower) * 80)
             if score > best_score:
                 best = item
                 best_score = score
@@ -157,8 +172,9 @@ def uncheck_habit(habit_name, **kwargs):
 
 def add_habit(name, frequency="daily", **kwargs):
     """Add a new daily habit."""
+    import uuid
     habits = _read_json("habits.json") or []
-    habit_id = f"habit-custom-{int(datetime.now().timestamp())}"
+    habit_id = f"habit-custom-{uuid.uuid4().hex[:8]}"
     habits.append({
         "id": habit_id,
         "name": name,
@@ -397,22 +413,26 @@ def complete_action(goal_number, action_number, **kwargs):
 
 
 def write_journal(went_well=None, didnt_go_well=None, learnings=None,
-                  tomorrow_focus=None, mood=3, energy=3, notes="", **kwargs):
+                  tomorrow_focus=None, mood=None, energy=None, notes=None, **kwargs):
     """Write today's journal entry."""
     today = _today()
     now = datetime.now().isoformat()
-    existing = _read_json(f"journal/{today}.json")
+    existing = _read_json(f"journal/{today}.json") or {}
+
+    # Merge: only override fields that were explicitly provided
+    mood = mood if mood is not None else existing.get("mood", 3)
+    energy = energy if energy is not None else existing.get("energy", 3)
 
     entry = {
         "date": today,
-        "wentWell": went_well or (existing or {}).get("wentWell", []),
-        "didntGoWell": didnt_go_well or (existing or {}).get("didntGoWell", []),
-        "learnings": learnings or (existing or {}).get("learnings", []),
-        "tomorrowFocus": tomorrow_focus or (existing or {}).get("tomorrowFocus", []),
+        "wentWell": went_well if went_well is not None else existing.get("wentWell", []),
+        "didntGoWell": didnt_go_well if didnt_go_well is not None else existing.get("didntGoWell", []),
+        "learnings": learnings if learnings is not None else existing.get("learnings", []),
+        "tomorrowFocus": tomorrow_focus if tomorrow_focus is not None else existing.get("tomorrowFocus", []),
         "mood": mood,
         "energy": energy,
-        "notes": notes or (existing or {}).get("notes", ""),
-        "createdAt": (existing or {}).get("createdAt", now),
+        "notes": notes if notes is not None else existing.get("notes", ""),
+        "createdAt": existing.get("createdAt", now),
         "updatedAt": now,
     }
     _write_json(f"journal/{today}.json", entry)

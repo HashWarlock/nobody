@@ -24,7 +24,7 @@ def test_get_default_persona():
     persona = manager.get_current()
 
     assert persona["name"] == "Assistant"
-    assert persona["llm"]["provider"] == "ollama"
+    assert persona["llm"]["provider"] == "redpill"
 
 
 def test_switch_persona():
@@ -37,7 +37,7 @@ def test_switch_persona():
 
     assert persona["name"] == "Tutor"
     assert persona["llm"]["provider"] == "redpill"
-    assert persona["llm"]["model"] == "z-ai/glm-4.6"
+    assert persona["llm"]["model"] == "z-ai/glm-4.7"
 
 
 def test_switch_invalid_persona():
